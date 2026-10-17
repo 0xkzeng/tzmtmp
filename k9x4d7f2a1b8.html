@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <!-- JS 会在页面加载后把这条改写成带计数参数的地址；若 JS 不工作，
+         它仍会以默认间隔整页刷新。 -->
+    <meta id="meta-refresh" http-equiv="refresh" content="610" />
+    <title>团队今日战报</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        /* 墨水屏：两种模式都用纸白底纯黑字，e-ink 不做反色渲染 */
+        --paper: #ffffff;
+        --ink: #000000;
+        --ink-soft: #333333;
+        --ink-faint: #666666;
+        --track: #e2e2e2;
+        --wash: #eeeeee;
+        --hairline: #c9c9c9;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #ffffff;
+          --ink: #000000;
+          --ink-soft: #333333;
+          --ink-faint: #666666;
+          --track: #e2e2e2;
+          --wash: #eeeeee;
+          --hairline: #c9c9c9;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; height: 100%; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        line-height: 1.3;
+        height: 100%;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 12px 16px 10px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 1. Masthead：黑底白字横幅 */
+      .masthead {
+        background: var(--ink);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        padding: 10px 16px 12px;
+        flex: 0 0 auto;
+      }
+      .masthead .titles { flex: 1 1 auto; min-width: 0; }
+      h1 {
+        margin: 0;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        line-height: 1.15;
+        font-size: 34px;
+        font-size: min(4.6vh, 9vw);
+      }
+      .subtitle {
+        margin: 3px 0 0;
+        font-size: 14px;
+        font-size: min(1.9vh, 3.8vw);
+        letter-spacing: 0.14em;
+        color: #d9d9d9;
+      }
+      .clockbox {
+        flex: 0 0 auto;
+        text-align: right;
+        padding-left: 14px;
+      }
+      .clockbox .label {
+        display: block;
+        font-size: 11px;
+        font-size: min(1.4vh, 3vw);
+        letter-spacing: 0.3em;
+        color: #bdbdbd;
+      }
+      .clock {
+        display: block;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        font-size: 24px;
+        font-size: min(3.4vh, 6.4vw);
+        line-height: 1.2;
+      }
+
+      /* 2. 关键指标条：三个大数字并排 */
+      .stats {
+        flex: 0 0 auto;
+        display: flex;
+        border-bottom: 4px solid var(--ink);
+        padding: 8px 2px 10px;
+      }
+      .stat { flex: 1 1 0; text-align: center; }
+      .stat + .stat { border-left: 2px solid var(--ink); }
+      .stat .num {
+        display: block;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.05;
+        font-size: 40px;
+        font-size: min(5.6vh, 11vw);
+      }
+      .stat .num .unit {
+        font-size: 0.42em;
+        font-weight: 700;
+        margin-left: 2px;
+      }
+      .stat .cap {
+        display: block;
+        margin-top: 2px;
+        font-size: 13px;
+        font-size: min(1.8vh, 3.6vw);
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: var(--ink-soft);
+      }
+
+      /* 3. 排行榜主体 */
+      .board {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .row {
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--hairline);
+        min-height: 0;
+        padding: 1px 0;
+      }
+      .row:last-child { border-bottom: none; }
+      .rank {
+        flex: 0 0 auto;
+        width: 2.1em;
+        text-align: center;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink-faint);
+        font-size: 22px;
+        font-size: min(3vh, 5.6vw);
+        line-height: 1;
+      }
+      .rank.top {
+        background: var(--ink);
+        color: var(--paper);
+        width: 1.7em;
+        padding: 0.18em 0;
+        margin-right: 0.4em;
+      }
+      .mid { flex: 1 1 auto; min-width: 0; padding: 0 10px 0 2px; }
+      .line1 {
+        display: flex;
+        align-items: baseline;
+        font-size: 15px;
+        font-size: min(2.05vh, 4vw);
+        line-height: 1.25;
+      }
+      .name { font-weight: 900; font-size: 1.12em; flex: 0 0 auto; white-space: nowrap; }
+      .work {
+        color: var(--ink-soft);
+        margin-left: 0.55em;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .status {
+        flex: 0 0 auto;
+        margin-left: 0.55em;
+        font-size: 0.78em;
+        font-weight: 700;
+        border: 1.5px solid var(--ink);
+        padding: 0 0.35em;
+        white-space: nowrap;
+      }
+      .status.done { background: var(--ink); color: var(--paper); }
+      .status.wait { border-color: var(--ink-faint); color: var(--ink-faint); }
+      .bar {
+        margin-top: 3px;
+        height: 6px;
+        height: 0.85vh;
+        background: var(--track);
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--ink);
+      }
+      .score {
+        flex: 0 0 auto;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        font-size: 28px;
+        font-size: min(3.9vh, 7.4vw);
+      }
+
+      /* 4. 上升之星小横幅 */
+      .rising {
+        flex: 0 0 auto;
+        background: var(--wash);
+        display: flex;
+        align-items: center;
+        padding: 7px 12px;
+        margin-top: 6px;
+        font-size: 15px;
+        font-size: min(2vh, 4vw);
+      }
+      .rising .tag {
+        flex: 0 0 auto;
+        background: var(--ink);
+        color: var(--paper);
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        padding: 2px 8px;
+        margin-right: 12px;
+        font-size: 0.85em;
+      }
+      .rising .txt { color: var(--ink-soft); }
+      .rising .txt b { color: var(--ink); font-weight: 900; }
+      .rising .gain { font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+      /* 5. 页脚口径行 */
+      .foot {
+        flex: 0 0 auto;
+        margin: 8px 0 0;
+        border-top: 2px solid var(--ink);
+        padding-top: 6px;
+        font-size: 12px;
+        font-size: min(1.6vh, 3.2vw);
+        line-height: 1.45;
+        color: var(--ink-faint);
+      }
+
+      /* 两面轮换：非当前面整面隐藏 */
+      .face[hidden] { display: none !important; }
+
+      /* 第二面：无明显卡点的行用浅灰表示 */
+      .work.none { color: var(--ink-faint); }
+
+      /* 第二面底部：共性卡点黑条 */
+      .common {
+        flex: 0 0 auto;
+        background: var(--ink);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 4px;
+        padding: 8px 12px;
+        margin-top: 6px;
+        font-size: 14px;
+        font-size: min(1.9vh, 3.8vw);
+      }
+      .common .tag {
+        flex: 0 0 auto;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        padding: 2px 8px;
+        margin-right: 12px;
+        font-size: 0.85em;
+      }
+      .common .items { font-weight: 700; letter-spacing: 0.04em; }
+
+      @media (max-width: 560px) {
+        main { padding: 8px 10px 8px; }
+        .masthead { padding: 8px 12px 10px; }
+        .subtitle { letter-spacing: 0.05em; font-size: min(1.9vh, 3.3vw); white-space: nowrap; }
+        .clockbox { padding-left: 8px; }
+        .clockbox .label { letter-spacing: 0.18em; }
+        .clock { font-size: min(3.4vh, 5.6vw); }
+        .mid { padding-right: 6px; }
+        .line1 { font-size: min(2.05vh, 3.35vw); }
+        .rank { font-size: min(3vh, 5vw); }
+        .score { font-size: min(3.9vh, 6.6vw); }
+        .status { border-width: 1px; padding: 0 0.25em; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="face active" id="face1">
+      <!-- 1. Masthead -->
+      <header class="masthead">
+        <div class="titles">
+          <h1>团队今日战报</h1>
+          <p class="subtitle">2026年10月16日 周五 北京时间</p>
+        </div>
+        <div class="clockbox">
+          <span class="label">现在时间</span>
+          <span class="clock" id="clock">--:--:--</span>
+        </div>
+      </header>
+
+      <!-- 2. 关键指标条 -->
+      <section class="stats">
+        <div class="stat">
+          <span class="num">7.2</span>
+          <span class="cap">平均分</span>
+        </div>
+        <div class="stat">
+          <span class="num">8.8</span>
+          <span class="cap">最高分</span>
+        </div>
+        <div class="stat">
+          <span class="num">2<span class="unit">项</span></span>
+          <span class="cap">完成闭环</span>
+        </div>
+      </section>
+
+      <!-- 3. 排行榜 -->
+      <section class="board">
+        <div class="row">
+          <span class="rank top">1</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Hailey</span><span class="work">店铺验证方案与产品改制沟通</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:88%"></i></div>
+          </div>
+          <span class="score">8.8</span>
+        </div>
+        <div class="row">
+          <span class="rank top">2</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Chloe</span><span class="work">公积金事项处理与会议组织</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:85%"></i></div>
+          </div>
+          <span class="score">8.5</span>
+        </div>
+        <div class="row">
+          <span class="rank top">3</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Terry</span><span class="work">广告优化跟进与实操分享主讲</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:83%"></i></div>
+          </div>
+          <span class="score">8.3</span>
+        </div>
+        <div class="row">
+          <span class="rank">4</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Daisy</span><span class="work">独立站售后邮件回复与跟进</span><span class="status done">已完成</span></div>
+            <div class="bar"><i style="width:80%"></i></div>
+          </div>
+          <span class="score">8.0</span>
+        </div>
+        <div class="row">
+          <span class="rank">5</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Lucas</span><span class="work">事业部产品梳理与利润分析</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:78%"></i></div>
+          </div>
+          <span class="score">7.8</span>
+        </div>
+        <div class="row">
+          <span class="rank">6</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Kevin</span><span class="work">产品固件问题定位与样品跟进</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:75%"></i></div>
+          </div>
+          <span class="score">7.5</span>
+        </div>
+        <div class="row">
+          <span class="rank">7</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Claire</span><span class="work">广告优化与站点利润数据整理</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:75%"></i></div>
+          </div>
+          <span class="score">7.5</span>
+        </div>
+        <div class="row">
+          <span class="rank">8</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Migo</span><span class="work">客户报价沟通与出货时效确认</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:75%"></i></div>
+          </div>
+          <span class="score">7.5</span>
+        </div>
+        <div class="row">
+          <span class="rank">9</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Seven</span><span class="work">供应商付款清单与发货协调</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:70%"></i></div>
+          </div>
+          <span class="score">7.0</span>
+        </div>
+        <div class="row">
+          <span class="rank">10</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Nero</span><span class="work">产品视频完成与图片设计制作</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:70%"></i></div>
+          </div>
+          <span class="score">7.0</span>
+        </div>
+        <div class="row">
+          <span class="rank">11</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Valley</span><span class="work">产品升级款需求梳理与交接</span><span class="status wait">待拍板</span></div>
+            <div class="bar"><i style="width:70%"></i></div>
+          </div>
+          <span class="score">7.0</span>
+        </div>
+        <div class="row">
+          <span class="rank">12</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Shirley</span><span class="work">供应商付款执行与换汇处理</span><span class="status done">已完成</span></div>
+            <div class="bar"><i style="width:68%"></i></div>
+          </div>
+          <span class="score">6.8</span>
+        </div>
+        <div class="row">
+          <span class="rank">13</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Karl</span><span class="work">公司网络恢复与账号配置处理</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:65%"></i></div>
+          </div>
+          <span class="score">6.5</span>
+        </div>
+        <div class="row">
+          <span class="rank">14</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Jay</span><span class="work">广告投放整理与库存补货核对</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:58%"></i></div>
+          </div>
+          <span class="score">5.8</span>
+        </div>
+        <div class="row">
+          <span class="rank">15</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Judy</span><span class="work">产品包装设计确认与优化跟进</span><span class="status">进行中</span></div>
+            <div class="bar"><i style="width:55%"></i></div>
+          </div>
+          <span class="score">5.5</span>
+        </div>
+        <div class="row">
+          <span class="rank">16</span>
+          <div class="mid">
+            <div class="line1"><span class="name">Finn</span><span class="work">产品包装规格核对与送审跟进</span><span class="status wait">待他人配合</span></div>
+            <div class="bar"><i style="width:50%"></i></div>
+          </div>
+          <span class="score">5.0</span>
+        </div>
+      </section>
+
+      <!-- 4. 当日之星 -->
+      <div class="rising">
+        <span class="tag">当日之星</span>
+        <span class="txt"><b>Hailey</b> <span class="gain">8.8</span> · 验证与改制双线推进</span>
+      </div>
+
+      <!-- 5. 页脚口径 -->
+      <p class="foot">当日分仅按 2026年10月16日当天工作与汇报评定；数据来源为公司内部当日沟通记录汇总，共 16 人，Jen 与 Vary 当天无动态记录。</p>
+    </main>
+
+    <!-- 第二面：卡点墙（与排行榜轮换，靠加载计数 n 的奇偶切换） -->
+    <main class="face" id="face2" hidden>
+      <header class="masthead">
+        <div class="titles">
+          <h1>问题与卡点</h1>
+          <p class="subtitle">2026年10月16日 周五 北京时间</p>
+        </div>
+        <div class="clockbox">
+          <span class="label">现在时间</span>
+          <span class="clock" data-clock>--:--:--</span>
+        </div>
+      </header>
+
+      <section class="board">
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Hailey</span><span class="work">待老板拍板方案</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Chloe</span><span class="work">待公积金处复核</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Terry</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Daisy</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Lucas</span><span class="work">待老板落实账号</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Kevin</span><span class="work">待工厂新样品</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Claire</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Migo</span><span class="work">待工厂核算成本</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Seven</span><span class="work">待老板确认付款</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Nero</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Valley</span><span class="work">待老板审核拍板</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Shirley</span><span class="work">待老板确认付款</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Karl</span><span class="work">待外部线路恢复</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Jay</span><span class="work">待对方回传合同</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Judy</span><span class="work">待运营合规审查</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Finn</span><span class="work">待运营审查结论</span></div></div></div>
+      </section>
+
+      <!-- 共性卡点黑条 -->
+      <div class="common">
+        <span class="tag">共性卡点</span>
+        <span class="items">待老板拍板积压&ensp;/&ensp;外部反馈周期长&ensp;/&ensp;基础设施不稳定</span>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        // 只用最基础的写法，照顾 Kindle 的浏览器内核
+        var params = {};
+        var q = window.location.search.replace(/^\?/, "");
+        var pairs = q.split("&");
+        var i, kv;
+        for (i = 0; i < pairs.length; i++) {
+          if (!pairs[i]) continue;
+          kv = pairs[i].split("=");
+          params[decodeURIComponent(kv[0])] = kv.length > 1 ? decodeURIComponent(kv[1]) : "";
+        }
+        // 自动刷新间隔：默认 10 分钟，可用 ?i=秒数 覆盖，i=0 关闭
+        var interval = parseInt(params.i, 10);
+        if (isNaN(interval) || interval < 0) interval = 600;
+        var count = parseInt(params.n, 10);
+        if (isNaN(count) || count < 1) count = 1;
+        var nextUrl = "?i=" + interval + "&n=" + (count + 1);
+
+        // 两面轮换：奇数次加载显示排行榜（第一面），偶数次显示卡点墙（第二面）
+        var face1 = document.getElementById("face1");
+        var face2 = document.getElementById("face2");
+        if (count % 2 === 0) {
+          face1.hidden = true;
+          face2.hidden = false;
+        } else {
+          face1.hidden = false;
+          face2.hidden = true;
+        }
+
+        // 让 meta refresh 指向同一个下一页地址，作为 JS 定时器之外的第二条路
+        var meta = document.getElementById("meta-refresh");
+        if (interval > 0) {
+          meta.setAttribute("content", (interval + 10) + "; url=" + nextUrl);
+        } else {
+          meta.setAttribute("content", "86400");
+        }
+
+        // 顶部时钟 + 到点整页刷新
+        var start = new Date().getTime();
+        function pad(n) { return (n < 10 ? "0" : "") + n; }
+        function tick() {
+          var now = new Date();
+          var text = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+          document.getElementById("clock").innerHTML = text;
+          var clocks = document.querySelectorAll("[data-clock]");
+          for (var c = 0; c < clocks.length; c++) clocks[c].innerHTML = text;
+          if (interval > 0) {
+            var aliveSec = Math.floor((now.getTime() - start) / 1000);
+            if (aliveSec >= interval) {
+              window.location.replace(nextUrl);
+            }
+          }
+        }
+        tick();
+        window.setInterval(tick, 1000);
+      })();
+    </script>
+  </body>
+</html>
