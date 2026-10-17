@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
+    <!-- 减少 Silk 浏览器缓存：每次打开都取最新页面 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link rel="icon" href="data:," />
     <!-- JS 会在页面加载后把这条改写成带计数参数的地址；若 JS 不工作，
          它仍会以默认间隔整页刷新。 -->
@@ -12,31 +16,40 @@
     <style>
       :root {
         color-scheme: light dark;
-        /* 墨水屏：两种模式都用纸白底纯黑字，e-ink 不做反色渲染 */
-        --paper: #ffffff;
-        --ink: #000000;
-        --ink-soft: #333333;
-        --ink-faint: #666666;
-        --track: #e2e2e2;
-        --wash: #eeeeee;
-        --hairline: #c9c9c9;
+        /* 彩色看板：深蓝/深青为品牌色，浅灰蓝底色；深色模式下保持同一套
+           彩色设计（墙面看板不做反色） */
+        --bg: #edf1f6;
+        --card: #ffffff;
+        --ink: #14273c;
+        --ink-soft: #41556e;
+        --ink-faint: #75879c;
+        --track: #e2e9f1;
+        --navy-1: #081c3a;
+        --navy-2: #0a3d5c;
+        --teal: #0b5e63;
+        --green: #1e9e57;
+        --band-blue: #0d84a6;
+        --amber: #d97e06;
+        --red: #d43d3d;
+        --gold-1: #f7c948;
+        --gold-2: #efa51c;
+        --shadow: 0 1px 3px rgba(10, 37, 64, 0.10), 0 4px 14px rgba(10, 37, 64, 0.05);
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --paper: #ffffff;
-          --ink: #000000;
-          --ink-soft: #333333;
-          --ink-faint: #666666;
-          --track: #e2e2e2;
-          --wash: #eeeeee;
-          --hairline: #c9c9c9;
+          --bg: #edf1f6;
+          --card: #ffffff;
+          --ink: #14273c;
+          --ink-soft: #41556e;
+          --ink-faint: #75879c;
+          --track: #e2e9f1;
         }
       }
       * { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; height: 100%; }
       body {
         margin: 0;
-        background: var(--paper);
+        background: var(--bg);
         color: var(--ink);
         font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
         line-height: 1.3;
@@ -51,13 +64,15 @@
         flex-direction: column;
       }
 
-      /* 1. Masthead：黑底白字横幅 */
+      /* 1. Masthead：深海军蓝到深青渐变横幅 */
       .masthead {
-        background: var(--ink);
-        color: var(--paper);
+        background: linear-gradient(120deg, var(--navy-1) 0%, var(--navy-2) 52%, var(--teal) 100%);
+        color: #ffffff;
         display: flex;
         align-items: center;
         padding: 10px 16px 12px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
         flex: 0 0 auto;
       }
       .masthead .titles { flex: 1 1 auto; min-width: 0; }
@@ -74,7 +89,7 @@
         font-size: 14px;
         font-size: min(1.9vh, 3.8vw);
         letter-spacing: 0.14em;
-        color: #d9d9d9;
+        color: rgba(255, 255, 255, 0.78);
       }
       .clockbox {
         flex: 0 0 auto;
@@ -86,7 +101,7 @@
         font-size: 11px;
         font-size: min(1.4vh, 3vw);
         letter-spacing: 0.3em;
-        color: #bdbdbd;
+        color: rgba(255, 255, 255, 0.65);
       }
       .clock {
         display: block;
@@ -96,24 +111,54 @@
         font-size: min(3.4vh, 6.4vw);
         line-height: 1.2;
       }
+      /* 全屏按钮：横幅右上角，低调半透明 */
+      .fsbtn {
+        flex: 0 0 auto;
+        margin-left: 14px;
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 999px;
+        font-family: inherit;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        cursor: pointer;
+        padding: 0.45em 0.9em;
+        font-size: 13px;
+        font-size: min(1.8vh, 3.6vw);
+        white-space: nowrap;
+      }
+      .fsbtn:active { background: rgba(255, 255, 255, 0.30); }
 
-      /* 2. 关键指标条：三个大数字并排 */
+      /* 2. 关键指标：三个彩色数字卡 */
       .stats {
         flex: 0 0 auto;
         display: flex;
-        border-bottom: 4px solid var(--ink);
-        padding: 8px 2px 10px;
+        gap: 10px;
+        padding: 10px 0 2px;
       }
-      .stat { flex: 1 1 0; text-align: center; }
-      .stat + .stat { border-left: 2px solid var(--ink); }
+      .stat {
+        flex: 1 1 0;
+        text-align: center;
+        background: var(--card);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        border-top: 5px solid var(--band-blue);
+        padding: 5px 4px 7px;
+      }
+      .stat.s-green { border-top-color: var(--green); }
+      .stat.s-gold { border-top-color: var(--gold-2); }
       .stat .num {
         display: block;
         font-weight: 900;
         font-variant-numeric: tabular-nums;
         line-height: 1.05;
+        color: var(--band-blue);
         font-size: 40px;
         font-size: min(5.6vh, 11vw);
       }
+      .stat.s-green .num { color: var(--green); }
+      .stat.s-gold .num { color: #b97a06; }
       .stat .num .unit {
         font-size: 0.42em;
         font-weight: 700;
@@ -129,22 +174,25 @@
         color: var(--ink-soft);
       }
 
-      /* 3. 排行榜主体 */
+      /* 3. 排行榜主体：每行一张白卡 */
       .board {
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         min-height: 0;
+        padding-top: 4px;
       }
       .row {
         flex: 1 1 0;
         display: flex;
         align-items: center;
-        border-bottom: 1px solid var(--hairline);
         min-height: 0;
-        padding: 1px 0;
+        background: var(--card);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        margin: 2.5px 0;
+        padding: 1px 12px 1px 8px;
       }
-      .row:last-child { border-bottom: none; }
       .rank {
         flex: 0 0 auto;
         width: 2.1em;
@@ -156,12 +204,15 @@
         font-size: min(3vh, 5.6vw);
         line-height: 1;
       }
+      /* 前三名：金色徽章 */
       .rank.top {
-        background: var(--ink);
-        color: var(--paper);
+        background: linear-gradient(135deg, var(--gold-1), var(--gold-2));
+        color: #4a2c00;
         width: 1.7em;
         padding: 0.18em 0;
         margin-right: 0.4em;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(185, 122, 6, 0.45);
       }
       .mid { flex: 1 1 auto; min-width: 0; padding: 0 10px 0 2px; }
       .line1 {
@@ -181,85 +232,113 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* 状态：彩色胶囊标签 */
       .status {
         flex: 0 0 auto;
         margin-left: 0.55em;
         font-size: 0.78em;
         font-weight: 700;
-        border: 1.5px solid var(--ink);
-        padding: 0 0.35em;
+        color: #ffffff;
+        background: #1d6fb8;
+        border-radius: 999px;
+        padding: 0.12em 0.6em;
         white-space: nowrap;
       }
-      .status.done { background: var(--ink); color: var(--paper); }
-      .status.wait { border-color: var(--ink-faint); color: var(--ink-faint); }
+      .status.done { background: var(--green); }
+      .status.decide { background: #7c3aed; }
+      .status.others { background: #ea7c28; }
+      /* 分数条：按分段着色 */
       .bar {
         margin-top: 3px;
         height: 6px;
         height: 0.85vh;
         background: var(--track);
+        border-radius: 999px;
+        overflow: hidden;
       }
       .bar i {
         display: block;
         height: 100%;
-        background: var(--ink);
+        border-radius: 999px;
+        background: var(--band-blue);
       }
+      .band-g .bar i { background: var(--green); }
+      .band-b .bar i { background: var(--band-blue); }
+      .band-a .bar i { background: var(--amber); }
+      .band-r .bar i { background: var(--red); }
       .score {
         flex: 0 0 auto;
         font-weight: 900;
         font-variant-numeric: tabular-nums;
         line-height: 1;
+        color: var(--band-blue);
         font-size: 28px;
         font-size: min(3.9vh, 7.4vw);
       }
+      .band-g .score { color: var(--green); }
+      .band-b .score { color: var(--band-blue); }
+      .band-a .score { color: var(--amber); }
+      .band-r .score { color: var(--red); }
 
-      /* 4. 上升之星小横幅 */
+      /* 4. 当日之星：金色渐变横幅 */
       .rising {
         flex: 0 0 auto;
-        background: var(--wash);
+        background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
         display: flex;
         align-items: center;
         padding: 7px 12px;
         margin-top: 6px;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
         font-size: 15px;
         font-size: min(2vh, 4vw);
       }
       .rising .tag {
         flex: 0 0 auto;
-        background: var(--ink);
-        color: var(--paper);
+        background: #43300a;
+        color: #ffdf7e;
         font-weight: 900;
         letter-spacing: 0.18em;
         padding: 2px 8px;
         margin-right: 12px;
+        border-radius: 5px;
         font-size: 0.85em;
       }
-      .rising .txt { color: var(--ink-soft); }
-      .rising .txt b { color: var(--ink); font-weight: 900; }
-      .rising .gain { font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+      .rising .txt { color: #4a3205; }
+      .rising .txt b { color: #2e1f00; font-weight: 900; }
+      .rising .gain { font-weight: 900; color: #2e1f00; font-variant-numeric: tabular-nums; }
 
       /* 5. 页脚口径行 */
       .foot {
         flex: 0 0 auto;
         margin: 8px 0 0;
-        border-top: 2px solid var(--ink);
+        border-top: 2px solid #c3d0de;
         padding-top: 6px;
         font-size: 12px;
         font-size: min(1.6vh, 3.2vw);
         line-height: 1.45;
         color: var(--ink-faint);
       }
+      .foot .hint { display: block; }
 
       /* 两面轮换：非当前面整面隐藏 */
       .face[hidden] { display: none !important; }
 
       /* 第二面：无明显卡点的行用浅灰表示 */
       .work.none { color: var(--ink-faint); }
+      /* 第二面：卡点文字用暖色，行卡加暖色左边框点缀 */
+      #face2 .row { border-left: 5px solid #f0a51e; }
+      #face2 .row.clear { border-left-color: #cfd9e3; }
+      #face2 .work.kp { color: #9c4a0a; font-weight: 700; }
 
-      /* 第二面底部：共性卡点黑条 */
+      /* 第二面底部：共性卡点条，红色左边框强调 */
       .common {
         flex: 0 0 auto;
-        background: var(--ink);
-        color: var(--paper);
+        background: linear-gradient(120deg, var(--navy-1), var(--navy-2));
+        color: #ffffff;
+        border-left: 7px solid var(--red);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
         display: flex;
         align-items: center;
         flex-wrap: wrap;
@@ -271,12 +350,13 @@
       }
       .common .tag {
         flex: 0 0 auto;
-        background: var(--paper);
-        color: var(--ink);
+        background: #ffffff;
+        color: var(--navy-1);
         font-weight: 900;
         letter-spacing: 0.18em;
         padding: 2px 8px;
         margin-right: 12px;
+        border-radius: 5px;
         font-size: 0.85em;
       }
       .common .items { font-weight: 700; letter-spacing: 0.04em; }
@@ -284,15 +364,19 @@
       @media (max-width: 560px) {
         main { padding: 8px 10px 8px; }
         .masthead { padding: 8px 12px 10px; }
-        .subtitle { letter-spacing: 0.05em; font-size: min(1.9vh, 3.3vw); white-space: nowrap; }
+        h1 { font-size: min(4.2vh, 7.2vw); letter-spacing: 0.03em; }
+        .subtitle { letter-spacing: 0.05em; font-size: min(1.9vh, 3.05vw); white-space: nowrap; }
         .clockbox { padding-left: 8px; }
         .clockbox .label { letter-spacing: 0.18em; }
         .clock { font-size: min(3.4vh, 5.6vw); }
+        .fsbtn { margin-left: 8px; padding: 0.4em 0.7em; }
+        .stats { gap: 6px; }
+        .row { padding-right: 8px; }
         .mid { padding-right: 6px; }
         .line1 { font-size: min(2.05vh, 3.35vw); }
         .rank { font-size: min(3vh, 5vw); }
         .score { font-size: min(3.9vh, 6.6vw); }
-        .status { border-width: 1px; padding: 0 0.25em; }
+        .status { padding: 0.1em 0.45em; }
       }
     </style>
   </head>
@@ -308,19 +392,20 @@
           <span class="label">现在时间</span>
           <span class="clock" id="clock">--:--:--</span>
         </div>
+        <button class="fsbtn" type="button" data-fs>全屏</button>
       </header>
 
-      <!-- 2. 关键指标条 -->
+      <!-- 2. 关键指标卡 -->
       <section class="stats">
         <div class="stat">
           <span class="num">7.2</span>
           <span class="cap">平均分</span>
         </div>
-        <div class="stat">
+        <div class="stat s-green">
           <span class="num">8.8</span>
           <span class="cap">最高分</span>
         </div>
-        <div class="stat">
+        <div class="stat s-gold">
           <span class="num">2<span class="unit">项</span></span>
           <span class="cap">完成闭环</span>
         </div>
@@ -328,7 +413,7 @@
 
       <!-- 3. 排行榜 -->
       <section class="board">
-        <div class="row">
+        <div class="row band-g">
           <span class="rank top">1</span>
           <div class="mid">
             <div class="line1"><span class="name">Hailey</span><span class="work">店铺验证方案与产品改制沟通</span><span class="status">进行中</span></div>
@@ -336,7 +421,7 @@
           </div>
           <span class="score">8.8</span>
         </div>
-        <div class="row">
+        <div class="row band-g">
           <span class="rank top">2</span>
           <div class="mid">
             <div class="line1"><span class="name">Chloe</span><span class="work">公积金事项处理与会议组织</span><span class="status">进行中</span></div>
@@ -344,7 +429,7 @@
           </div>
           <span class="score">8.5</span>
         </div>
-        <div class="row">
+        <div class="row band-g">
           <span class="rank top">3</span>
           <div class="mid">
             <div class="line1"><span class="name">Terry</span><span class="work">广告优化跟进与实操分享主讲</span><span class="status">进行中</span></div>
@@ -352,7 +437,7 @@
           </div>
           <span class="score">8.3</span>
         </div>
-        <div class="row">
+        <div class="row band-g">
           <span class="rank">4</span>
           <div class="mid">
             <div class="line1"><span class="name">Daisy</span><span class="work">独立站售后邮件回复与跟进</span><span class="status done">已完成</span></div>
@@ -360,7 +445,7 @@
           </div>
           <span class="score">8.0</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">5</span>
           <div class="mid">
             <div class="line1"><span class="name">Lucas</span><span class="work">事业部产品梳理与利润分析</span><span class="status">进行中</span></div>
@@ -368,7 +453,7 @@
           </div>
           <span class="score">7.8</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">6</span>
           <div class="mid">
             <div class="line1"><span class="name">Kevin</span><span class="work">产品固件问题定位与样品跟进</span><span class="status">进行中</span></div>
@@ -376,7 +461,7 @@
           </div>
           <span class="score">7.5</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">7</span>
           <div class="mid">
             <div class="line1"><span class="name">Claire</span><span class="work">广告优化与站点利润数据整理</span><span class="status">进行中</span></div>
@@ -384,7 +469,7 @@
           </div>
           <span class="score">7.5</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">8</span>
           <div class="mid">
             <div class="line1"><span class="name">Migo</span><span class="work">客户报价沟通与出货时效确认</span><span class="status">进行中</span></div>
@@ -392,7 +477,7 @@
           </div>
           <span class="score">7.5</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">9</span>
           <div class="mid">
             <div class="line1"><span class="name">Seven</span><span class="work">供应商付款清单与发货协调</span><span class="status">进行中</span></div>
@@ -400,7 +485,7 @@
           </div>
           <span class="score">7.0</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">10</span>
           <div class="mid">
             <div class="line1"><span class="name">Nero</span><span class="work">产品视频完成与图片设计制作</span><span class="status">进行中</span></div>
@@ -408,15 +493,15 @@
           </div>
           <span class="score">7.0</span>
         </div>
-        <div class="row">
+        <div class="row band-b">
           <span class="rank">11</span>
           <div class="mid">
-            <div class="line1"><span class="name">Valley</span><span class="work">产品升级款需求梳理与交接</span><span class="status wait">待拍板</span></div>
+            <div class="line1"><span class="name">Valley</span><span class="work">产品升级款需求梳理与交接</span><span class="status decide">待拍板</span></div>
             <div class="bar"><i style="width:70%"></i></div>
           </div>
           <span class="score">7.0</span>
         </div>
-        <div class="row">
+        <div class="row band-a">
           <span class="rank">12</span>
           <div class="mid">
             <div class="line1"><span class="name">Shirley</span><span class="work">供应商付款执行与换汇处理</span><span class="status done">已完成</span></div>
@@ -424,7 +509,7 @@
           </div>
           <span class="score">6.8</span>
         </div>
-        <div class="row">
+        <div class="row band-a">
           <span class="rank">13</span>
           <div class="mid">
             <div class="line1"><span class="name">Karl</span><span class="work">公司网络恢复与账号配置处理</span><span class="status">进行中</span></div>
@@ -432,7 +517,7 @@
           </div>
           <span class="score">6.5</span>
         </div>
-        <div class="row">
+        <div class="row band-r">
           <span class="rank">14</span>
           <div class="mid">
             <div class="line1"><span class="name">Jay</span><span class="work">广告投放整理与库存补货核对</span><span class="status">进行中</span></div>
@@ -440,7 +525,7 @@
           </div>
           <span class="score">5.8</span>
         </div>
-        <div class="row">
+        <div class="row band-r">
           <span class="rank">15</span>
           <div class="mid">
             <div class="line1"><span class="name">Judy</span><span class="work">产品包装设计确认与优化跟进</span><span class="status">进行中</span></div>
@@ -448,10 +533,10 @@
           </div>
           <span class="score">5.5</span>
         </div>
-        <div class="row">
+        <div class="row band-r">
           <span class="rank">16</span>
           <div class="mid">
-            <div class="line1"><span class="name">Finn</span><span class="work">产品包装规格核对与送审跟进</span><span class="status wait">待他人配合</span></div>
+            <div class="line1"><span class="name">Finn</span><span class="work">产品包装规格核对与送审跟进</span><span class="status others">待他人配合</span></div>
             <div class="bar"><i style="width:50%"></i></div>
           </div>
           <span class="score">5.0</span>
@@ -465,10 +550,10 @@
       </div>
 
       <!-- 5. 页脚口径 -->
-      <p class="foot">当日分仅按 2026年10月16日当天工作与汇报评定；数据来源为公司内部当日沟通记录汇总，共 16 人，Jen 与 Vary 当天无动态记录。</p>
+      <p class="foot">当日分仅按 2026年10月16日当天工作与汇报评定；数据来源为公司内部当日沟通记录汇总，共 16 人，Jen 与 Vary 当天无动态记录。<span class="hint">看板操作：点右上角「全屏」进入全屏，再点一次退出；两面每 60 秒自动轮换，整页每 10 分钟自动刷新。</span></p>
     </main>
 
-    <!-- 第二面：卡点墙（与排行榜轮换，靠加载计数 n 的奇偶切换） -->
+    <!-- 第二面：卡点墙（页内 JS 每 60 秒与第一面轮换） -->
     <main class="face" id="face2" hidden>
       <header class="masthead">
         <div class="titles">
@@ -479,28 +564,29 @@
           <span class="label">现在时间</span>
           <span class="clock" data-clock>--:--:--</span>
         </div>
+        <button class="fsbtn" type="button" data-fs>全屏</button>
       </header>
 
       <section class="board">
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Hailey</span><span class="work">待老板拍板方案</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Chloe</span><span class="work">待公积金处复核</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Terry</span><span class="work none">无明显卡点</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Daisy</span><span class="work none">无明显卡点</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Lucas</span><span class="work">待老板落实账号</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Kevin</span><span class="work">待工厂新样品</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Claire</span><span class="work none">无明显卡点</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Migo</span><span class="work">待工厂核算成本</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Seven</span><span class="work">待老板确认付款</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Nero</span><span class="work none">无明显卡点</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Valley</span><span class="work">待老板审核拍板</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Shirley</span><span class="work">待老板确认付款</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Karl</span><span class="work">待外部线路恢复</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Jay</span><span class="work">待对方回传合同</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Judy</span><span class="work">待运营合规审查</span></div></div></div>
-        <div class="row"><div class="mid"><div class="line1"><span class="name">Finn</span><span class="work">待运营审查结论</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Hailey</span><span class="work kp">待老板拍板方案</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Chloe</span><span class="work kp">待公积金处复核</span></div></div></div>
+        <div class="row clear"><div class="mid"><div class="line1"><span class="name">Terry</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row clear"><div class="mid"><div class="line1"><span class="name">Daisy</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Lucas</span><span class="work kp">待老板落实账号</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Kevin</span><span class="work kp">待工厂新样品</span></div></div></div>
+        <div class="row clear"><div class="mid"><div class="line1"><span class="name">Claire</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Migo</span><span class="work kp">待工厂核算成本</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Seven</span><span class="work kp">待老板确认付款</span></div></div></div>
+        <div class="row clear"><div class="mid"><div class="line1"><span class="name">Nero</span><span class="work none">无明显卡点</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Valley</span><span class="work kp">待老板审核拍板</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Shirley</span><span class="work kp">待老板确认付款</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Karl</span><span class="work kp">待外部线路恢复</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Jay</span><span class="work kp">待对方回传合同</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Judy</span><span class="work kp">待运营合规审查</span></div></div></div>
+        <div class="row"><div class="mid"><div class="line1"><span class="name">Finn</span><span class="work kp">待运营审查结论</span></div></div></div>
       </section>
 
-      <!-- 共性卡点黑条 -->
+      <!-- 共性卡点条 -->
       <div class="common">
         <span class="tag">共性卡点</span>
         <span class="items">待老板拍板积压&ensp;/&ensp;外部反馈周期长&ensp;/&ensp;基础设施不稳定</span>
@@ -509,7 +595,7 @@
 
     <script>
       (function () {
-        // 只用最基础的写法，照顾 Kindle 的浏览器内核
+        // 只用最基础的写法，照顾 Silk / Kindle 的浏览器内核
         var params = {};
         var q = window.location.search.replace(/^\?/, "");
         var pairs = q.split("&");
@@ -519,23 +605,45 @@
           kv = pairs[i].split("=");
           params[decodeURIComponent(kv[0])] = kv.length > 1 ? decodeURIComponent(kv[1]) : "";
         }
-        // 自动刷新间隔：默认 10 分钟，可用 ?i=秒数 覆盖，i=0 关闭
+        // 整页自动刷新间隔：默认 10 分钟，可用 ?i=秒数 覆盖，i=0 关闭
         var interval = parseInt(params.i, 10);
         if (isNaN(interval) || interval < 0) interval = 600;
         var count = parseInt(params.n, 10);
         if (isNaN(count) || count < 1) count = 1;
         var nextUrl = "?i=" + interval + "&n=" + (count + 1);
 
-        // 两面轮换：奇数次加载显示排行榜（第一面），偶数次显示卡点墙（第二面）
+        // 两面轮换：页内 JS 每 60 秒翻一面，不依赖整页刷新
         var face1 = document.getElementById("face1");
         var face2 = document.getElementById("face2");
-        if (count % 2 === 0) {
-          face1.hidden = true;
-          face2.hidden = false;
-        } else {
-          face1.hidden = false;
-          face2.hidden = true;
+        var showing2 = false;
+        face1.hidden = false;
+        face2.hidden = true;
+        window.setInterval(function () {
+          showing2 = !showing2;
+          face1.hidden = showing2;
+          face2.hidden = !showing2;
+        }, 60000);
+
+        // 全屏按钮：调用 Fullscreen API，再点一次退出
+        function syncFsLabels() {
+          var on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+          var btns = document.querySelectorAll("[data-fs]");
+          for (var b = 0; b < btns.length; b++) btns[b].innerHTML = on ? "退出全屏" : "全屏";
         }
+        function toggleFs() {
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } else {
+            var el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          }
+        }
+        var fsBtns = document.querySelectorAll("[data-fs]");
+        for (var f = 0; f < fsBtns.length; f++) fsBtns[f].addEventListener("click", toggleFs);
+        document.addEventListener("fullscreenchange", syncFsLabels);
+        document.addEventListener("webkitfullscreenchange", syncFsLabels);
 
         // 让 meta refresh 指向同一个下一页地址，作为 JS 定时器之外的第二条路
         var meta = document.getElementById("meta-refresh");
